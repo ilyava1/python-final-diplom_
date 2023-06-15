@@ -3,7 +3,15 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
 
 
+CONTACT_TYPE_CHOICES = [
+    ('shop', 'Магазин'),
+    ('buyer', 'Покупатель'),
+]
+
 class User(AbstractUser):
+    """
+    Базовый класс для реализации объекта пользователя
+    """
     username = models.CharField(max_length=150,
                                 verbose_name='Имя пользователя', unique=True)
     email = models.EmailField(verbose_name='email пользователя', unique=True)
@@ -20,10 +28,13 @@ class User(AbstractUser):
 
 
 class Shop(models.Model):
-    name = models.CharField(verbose_name='Название магазина', max_length=50)
+    """
+    Класс для реализации объекта Магазин
+    """
+    name = models.CharField(verbose_name='Название магазина', max_length=50, null=True, blank=True)
     url = models.URLField(verbose_name='Ссылка на сайт магазина', null=True,
                           blank=True)
-    filename = models.CharField(verbose_name='Файл', max_length=50)
+    filename = models.CharField(verbose_name='Файл', max_length=50, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -32,9 +43,12 @@ class Shop(models.Model):
         verbose_name = 'Магазин'
         verbose_name_plural = "Список магазинов"
         ordering = ('name',)
-
+#
 
 class Category(models.Model):
+    """
+    Класс для реализации объекта Категория продуктов
+    """
     name = models.CharField(verbose_name='Название категории', max_length=50)
     shops = models.ManyToManyField(Shop, verbose_name='Магазины',
                                    related_name='categories', blank=True)
@@ -49,6 +63,9 @@ class Category(models.Model):
 
 
 class Product(models.Model):
+    """
+    Класс для реализации объекта Продукт
+    """
     name = models.CharField(verbose_name='Название продукта', max_length=50)
     category = models.ForeignKey(Category, verbose_name='Категория продукта',
                                  related_name='products', blank=True,
@@ -64,6 +81,9 @@ class Product(models.Model):
 
 
 class ProductInfo(models.Model):
+    """
+    Класс для реализации объекта Информация о продукте
+    """
     product = models.ForeignKey(Product, verbose_name='Продукт',
                                 related_name='product_infos',
                                 blank=True, on_delete=models.CASCADE)
@@ -85,6 +105,9 @@ class ProductInfo(models.Model):
 
 
 class Parameter(models.Model):
+    """
+    Класс для реализации объекта Параметр
+    """
     name = models.CharField(verbose_name='Название параметра', max_length=50)
 
     def __str__(self):
@@ -97,6 +120,9 @@ class Parameter(models.Model):
 
 
 class ProductParameter(models.Model):
+    """
+    Класс для реализации объекта Параметр продукта
+    """
     product_info = models.ForeignKey(ProductInfo,
                                      related_name='product_parameters',
                                      verbose_name='Информация о продукте',
@@ -116,6 +142,9 @@ class ProductParameter(models.Model):
 
 
 class Order(models.Model):
+    """
+    Класс для реализации объекта Заказ
+    """
     user = models.ForeignKey(User, verbose_name='Пользователь',
                              related_name='orders', blank=True,
                              on_delete=models.CASCADE)
@@ -123,7 +152,7 @@ class Order(models.Model):
     status = models.CharField(verbose_name='Статус', max_length=50)
 
     def __str__(self):
-        return str(f'{self.dt} {self.status}')
+        return str(f'{self.register_date} {self.status}')
 
     class Meta:
         verbose_name = 'Заказ'
@@ -132,6 +161,9 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
+    """
+    Класс для реализации объекта Позиция заказа
+    """
     order = models.ForeignKey(Order, verbose_name='Заказ',
                               related_name='ordered_items',
                               blank=True, on_delete=models.CASCADE)
@@ -152,12 +184,16 @@ class OrderItem(models.Model):
 
 
 class Contact(models.Model):
-    type = models.CharField(verbose_name='Тип контакта', max_length=50)
+    """
+    Класс для реализации объекта Контакт (пользователя)
+    """
     user = models.ForeignKey(User, verbose_name='Пользователь',
                              related_name='contacts', blank=True,
                              on_delete=models.CASCADE)
     value = models.CharField(verbose_name='Значение', max_length=50)
-    type = models.CharField(max_length=5, default='Покупатель')
+    type = models.CharField(verbose_name='Тип контакта',
+                            choices=CONTACT_TYPE_CHOICES,
+                            max_length=5, default='buyer')
 
     def __str__(self):
         return str(f'{self.user.name} {self.type}')
