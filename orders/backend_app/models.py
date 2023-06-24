@@ -37,7 +37,7 @@ class Shop(models.Model):
     filename = models.CharField(verbose_name='Файл', max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return (f'{self.id}-{self.name}')
 
     class Meta:
         verbose_name = 'Магазин'
