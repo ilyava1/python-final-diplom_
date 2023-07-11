@@ -9,7 +9,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-with open("shop1.yaml", 'r', encoding='utf-8') as file:
+with open("../../shop1.yaml", 'r', encoding='utf-8') as file:
     try:
         data = load(file, Loader=Loader)
     except yaml.YAMLError as exc:
