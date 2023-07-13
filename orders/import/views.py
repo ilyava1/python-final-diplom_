@@ -8,9 +8,11 @@ from backend_app.models import Parameter, ProductParameter
 
 class PriceImport(APIView):
     """
-    Класс для загрузки/обновления данных о прайсе магазина.
+    Класс для загрузки/обновления данных о прайсе магазин.
     """
     def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
         file_path = os.getcwd() + '\\shop1.yaml'
         fl = open(file_path, 'r', encoding='utf-8')
         dict_from_yaml = load_yaml(fl, Loader=Loader)
@@ -28,8 +30,8 @@ class PriceImport(APIView):
         for category_object in category_objects:
             type_x = int(category_object['id'])
             category = Category(id=category_object['id'], name=category_object['name'])
-            category.shops.add(shop.id)
             category.save()
+            category.shops.add(shop)
 
         # Загружаем товары:
         goods_objects = dict_from_yaml['goods']
