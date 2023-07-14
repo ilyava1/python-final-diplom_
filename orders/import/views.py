@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from yaml import load as load_yaml, Loader
 from backend_app.models import Shop, Category, Product, ProductInfo
-from backend_app.models import Parameter, ProductParameter
+from backend_app.models import Parameter, ProductParameter, Contact
 
 
 class PriceImport(APIView):
@@ -13,6 +13,10 @@ class PriceImport(APIView):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+        user_type = list(Contact.objects.filter(user=request.user, type='supplier'))
+        if user_type == []:
+            return JsonResponse({'Status': False, 'Error': 'You have not enought rights'}, status=403)
+
         file_path = os.getcwd() + '\\shop1.yaml'
         fl = open(file_path, 'r', encoding='utf-8')
         dict_from_yaml = load_yaml(fl, Loader=Loader)

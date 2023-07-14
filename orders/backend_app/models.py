@@ -4,8 +4,8 @@ from django.contrib.auth.base_user import BaseUserManager
 
 
 CONTACT_TYPE_CHOICES = [
+    ('supplier', 'Поставщик'),
     ('shop', 'Магазин'),
-    ('buyer', 'Покупатель'),
 ]
 
 class User(AbstractUser):
@@ -23,7 +23,7 @@ class User(AbstractUser):
 
     class Meta:
         verbose_name = 'Пользователь'
-        verbose_name_plural = "Список пользователей"
+        verbose_name_plural = 'Список пользователей'
         ordering = ('username',)
 
 
@@ -41,7 +41,7 @@ class Shop(models.Model):
 
     class Meta:
         verbose_name = 'Магазин'
-        verbose_name_plural = "Список магазинов"
+        verbose_name_plural = 'Список магазинов'
         ordering = ('name',)
 #
 
@@ -54,11 +54,11 @@ class Category(models.Model):
                                    related_name='categories', blank=True)
 
     def __str__(self):
-        return self.name
+        return (f'{self.id}-{self.name}')
 
     class Meta:
         verbose_name = 'Категория'
-        verbose_name_plural = "Список категорий"
+        verbose_name_plural = 'Список категорий'
         ordering = ('name',)
 
 
@@ -72,11 +72,11 @@ class Product(models.Model):
                                  on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
+        return (f'{self.id}-{self.name}')
 
     class Meta:
         verbose_name = 'Продукт'
-        verbose_name_plural = "Список продуктов"
+        verbose_name_plural = 'Список продуктов'
         ordering = ('name',)
 
 
@@ -96,11 +96,11 @@ class ProductInfo(models.Model):
     price_rrc = models.PositiveIntegerField(verbose_name='Рекомендуемая цена')
 
     def __str__(self):
-        return self.name
+        return (f'{self.id}-{self.name}-{self.quantity}-{self.price}')
 
     class Meta:
         verbose_name = 'Информация о продукте'
-        verbose_name_plural = "Информационный список о продуктах"
+        verbose_name_plural = 'Информационный список о продуктах'
         ordering = ('name',)
 
 
@@ -111,11 +111,11 @@ class Parameter(models.Model):
     name = models.CharField(verbose_name='Название параметра', max_length=50)
 
     def __str__(self):
-        return self.name
+        return (f'{self.id}-{self.name}')
 
     class Meta:
         verbose_name = 'Параметр'
-        verbose_name_plural = "Список параметров"
+        verbose_name_plural = 'Список параметров'
         ordering = ('name',)
 
 
@@ -133,11 +133,11 @@ class ProductParameter(models.Model):
     value = models.CharField(verbose_name='Значение', max_length=100)
 
     def __str__(self):
-        return str(f'{self.parameter.name} {self.value}')
+        return str(f'{self.id}-{self.parameter.name}-{self.value}')
 
     class Meta:
         verbose_name = 'Параметр продукта'
-        verbose_name_plural = "Список параметров продукта"
+        verbose_name_plural = 'Список параметров продукта'
         ordering = ('value',)
 
 
@@ -156,7 +156,7 @@ class Order(models.Model):
 
     class Meta:
         verbose_name = 'Заказ'
-        verbose_name_plural = "Список заказов"
+        verbose_name_plural = 'Список заказов'
         ordering = ('-register_date',)
 
 
@@ -176,11 +176,11 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(verbose_name='Количество')
 
     def __str__(self):
-        return str(f'{self.product.name} {self.quantity}')
+        return str(f'{self.id}-{self.order.id}-{self.product.name}-{self.quantity}')
 
     class Meta:
         verbose_name = 'Позиция заказа'
-        verbose_name_plural = "Список позиций заказа"
+        verbose_name_plural = 'Позиции заказов'
 
 
 class Contact(models.Model):
@@ -188,17 +188,18 @@ class Contact(models.Model):
     Класс для реализации объекта Контакт (пользователя)
     """
     user = models.ForeignKey(User, verbose_name='Пользователь',
-                             related_name='contacts', blank=True,
+                             related_name='contacts', blank=False,
                              on_delete=models.CASCADE)
-    value = models.CharField(verbose_name='Значение', max_length=50)
-    type = models.CharField(verbose_name='Тип контакта',
-                            choices=CONTACT_TYPE_CHOICES,
-                            max_length=5, default='buyer')
+    value = models.CharField(verbose_name='Пояснение', blank=True,
+                             max_length=50)
+    type = models.CharField(verbose_name='Тип контакта', blank=False,
+                            choices=CONTACT_TYPE_CHOICES, max_length=10,
+                            default='shop')
 
     def __str__(self):
-        return str(f'{self.user.name} {self.type}')
+        return str(f'{self.user.username} {self.type}')
 
     class Meta:
-        verbose_name = 'Контакты пользователя'
-        verbose_name_plural = "Список контактов пользователя"
+        verbose_name = 'Тип контакта пользователя'
+        verbose_name_plural = 'Типы контактов пользователей'
         ordering = ('type',)
