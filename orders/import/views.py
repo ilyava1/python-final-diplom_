@@ -2,7 +2,7 @@ import os
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from yaml import load as load_yaml, Loader
-from backend_app.models import Shop, Category, Product, ProductInfo
+from backend_app.models import Company, Category, Product, ProductInfo
 from backend_app.models import Parameter, ProductParameter, Contact
 
 
@@ -11,31 +11,57 @@ class PriceImport(APIView):
     Класс для загрузки/обновления данных о прайсе магазин.
     """
     def post(self, request, *args, **kwargs):
+        # Если пользователь не аутентифицирован - отказ в продолжении операции
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-        user_type = list(Contact.objects.filter(user=request.user, type='supplier'))
-        if user_type == []:
-            return JsonResponse({'Status': False, 'Error': 'You have not enought rights'}, status=403)
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=401)
 
-        file_path = os.getcwd() + '\\shop1.yaml'
+        # Формируем список компаний типа "поставщик", по которым пользователь
+        # зарегистрирован в качестве контакта.
+        # Если список пуст - отказ в продолжении операции
+        company_list = []
+        suppliers = Company.objects.filter(type='supplier')
+        for company in suppliers:
+            user_contact = Contact.objects.filter(user=request.user, company=company)
+            if user_contact.exists():
+                company_list.append(company.company_name)
+
+        # Если пользователь авторизован, читаем файл с прайсом
+        file_path = os.getcwd() + '\\supplier1.yaml'
         fl = open(file_path, 'r', encoding='utf-8')
         dict_from_yaml = load_yaml(fl, Loader=Loader)
         fl.close()
 
-        # Загружаем магазин с его атрибутами:
-        shop_object = dict_from_yaml['shop'][0]
-        shop = Shop(id=shop_object['id'], name=shop_object['name'],
-                    url=shop_object['url'], filename=shop_object['filename'])
-        shop.save()
+        # Проверяем наличие поставщика в базе.
+        # Если в базе нет такого поставщика - отказ в продолжении операции
+        supplier_object = dict_from_yaml['supplier'][0]
+        try:
+            supplier = Company.objects.get(id=supplier_object['id'])
+        except:
+            return JsonResponse({'Loading status': False,
+                                 'Message': f'Company with id={supplier_object["id"]} '
+                                             f'{supplier_object["name"]} has '
+                                             f'not been registered in the '
+                                             f'database yet. Сomplete the '
+                                             f'registration before loading '
+                                             f'price'}, status=404)
 
-        # Загружаем категории:
+        # Если поставщик зарегистрирован, проверяем по тому ли поставщику
+        # зарегистрирован пользователь.
+        # Если не по тому - отказ в продолжении операции
+        if supplier_object['name'] not in company_list:
+            return JsonResponse({'Loading status': False,
+                                 'Message': f'Price from company {supplier_object["name"]}, '
+                                            f'but you registered from following company(ies) '
+                                            f'{company_list}'}, status=403)
+
+        # Далее приступаем к загрузке прайса
+        # Снчала загружаем категории:
         category_objects = dict_from_yaml['categories']
 
         for category_object in category_objects:
-            type_x = int(category_object['id'])
             category = Category(id=category_object['id'], name=category_object['name'])
             category.save()
-            category.shops.add(shop)
+            category.companies.add(supplier_object['id'])
 
         # Загружаем товары:
         goods_objects = dict_from_yaml['goods']
@@ -49,7 +75,7 @@ class PriceImport(APIView):
             if existing_prod_info == []:
                 # Если информации по продукту нет - добавляем ее в базу
                 product_info = ProductInfo(product_id=good_object['id'],
-                                           shop_id=shop.id,
+                                           company_id=supplier.id,
                                            name=good_object['model'],
                                            quantity=good_object['quantity'],
                                            price=good_object['price'],
@@ -58,14 +84,14 @@ class PriceImport(APIView):
                 # Если информация по продукту есть - обновляем её
                 product_info = ProductInfo(id=existing_prod_info[0].id,
                                            product_id=good_object['id'],
-                                           shop_id=shop.id,
+                                           company_id=supplier.id,
                                            name=good_object['model'],
                                            quantity=good_object['quantity'],
                                            price=good_object['price'],
                                            price_rrc=good_object['price_rrc'])
             product_info.save()
 
-            # Загружаем информацию о параметрах и параметрах продукта
+            # Загружаем информацию о параметрах продукта
             for parameter_name, parameter_value in good_object['parameters'].items():
                 existing_parameter = list(Parameter.objects.filter(name=parameter_name))
                 if existing_parameter == []:
@@ -82,7 +108,7 @@ class PriceImport(APIView):
 
 
         return JsonResponse({'Status': True,
-                             'File': f'Загрузка прайса магазина {shop.name} произведена'})
+                             'Message': f'Loading price of {supplier.company_name} completed successfully'})
 
 
     def get(self, request, *args, **kwargs):

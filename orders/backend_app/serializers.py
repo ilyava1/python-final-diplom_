@@ -1,15 +1,23 @@
 from rest_framework import serializers
-from .models import Shop, Category
+from .models import User, Contact, Category, Company
 
 
-class ShopSerializer(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Shop
-        fields = ['id', 'name', 'url', 'filename']
+        model = Company
+        fields = '__all__'
+        read_only_fields = ('id',)
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    shops = ShopSerializer(read_only=True, many=True)
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ['id', 'name', 'shops']
+        model = User
+        fields = '__all__'
+        read_only_fields = ('id',)
+
+class ContactSerializer(serializers.ModelSerializer):
+    # user = serializers.PrimaryKeyRelatedField(write_only=True)
+    # company = serializers.PrimaryKeyRelatedField(write_only=True)
+    class Meta:
+        model = Contact
+        fields = '__all__'

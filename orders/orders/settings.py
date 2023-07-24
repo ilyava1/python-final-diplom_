@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+
+import rest_framework.authentication
+
 # from backend_app import models
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -81,7 +84,7 @@ WSGI_APPLICATION = 'orders.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'diploma'),
     }
 }
 
@@ -131,5 +134,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':[
         'rest_framework.authentication.TokenAuthentication',
+
     ]
 }

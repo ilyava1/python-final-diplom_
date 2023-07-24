@@ -1,8 +1,6 @@
 from django.urls import path
-from .views import ShopView, CategoryView
+from .views import RegisterAccount
 
 urlpatterns = [
-   path('shops/', ShopView.as_view()),
-   path('shops/<pk>/', ShopView.as_view()),
-   path('categories/', CategoryView.as_view()),
+   path('register/', RegisterAccount.as_view()),
    ]

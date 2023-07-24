@@ -9,6 +9,6 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = 'user', 'value', 'type'
+    list_display = 'user', 'value', 'company', 'position', 'phone'
     list_filter = ['user']
 

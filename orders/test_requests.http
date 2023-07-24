@@ -1,14 +1,62 @@
-### Запрос на загрузку данных неавторизованного пользователя
+### Запрос 1 - Регистрация пользователя магазина
+POST http://127.0.0.1:8000/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Sergey",
+  "last_name": "Alekseev",
+  "middle_name": "Ivanovich",
+  "username": "salex",
+  "email": "salex@mail.ru",
+  "password": "1qaz2wsx",  
+  "position": "Purchase manager",
+  "phone": "8-926-123-44-55",
+  "company_name": "Magnit",
+  "adress": "Moscow, Brateevskaya, 4"
+  
+}
+
+### Запрос 2 - Регистрация пользователя поставщика
+POST http://127.0.0.1:8000/user/register/
+Content-Type: application/json
+Authorization: Token 855cd926625b97870d97894ae525c5e7c646b464
+
+{
+  "first_name": "Igor",
+  "last_name": "Korolev",
+  "middle_name": "Ivanovich",
+  "username": "ikorol",
+  "email": "ikorol@mail.ru",
+  "password": "1qaz2wsx", 
+  "type": "supplier", 
+  "position": "Sales manager",
+  "phone": "8-926-443-23-43",
+  "company_name": "reStore",
+  "adress": "Moscow, Murmansky pr, 8"
+  
+}
+
+### Запрос 3 - Загрузка прайса от неавторизованного пользователя
 POST http://127.0.0.1:8000/import/price_import/
 
 
-### Запрос на загрузку данных от покупателя
+### Запрос 4 - Загружка прайса от авторизованного пользователя
+### типа покупатель (username=buyer_manager)
 POST http://127.0.0.1:8000/import/price_import/
 Content-Type: application/json
 Authorization: Token 0689561118e91143de2d5d6b0917cb6b66be46b9
 
 
-### Запрос на загрузку данных от менеджера поставщика
+### Запрос 5 - Загружка прайса от авторизованного пользователя
+### типа поставщик (username=supplier_manager)
 POST http://127.0.0.1:8000/import/price_import/
 Content-Type: application/json
 Authorization: Token 855cd926625b97870d97894ae525c5e7c646b464
+
+
+### Запрос на загрузку данных от менеджера поставщика
+### с файлом в теле запроса - ЗАПРОС НЕ РАБОЧИЙ
+POST http://127.0.0.1:8000/import/price_import/
+Content-Type: application/json
+Authorization: Token 855cd926625b97870d97894ae525c5e7c646b464
+Content-Disposition: form-data; name="file"; filename="shop1.yaml"

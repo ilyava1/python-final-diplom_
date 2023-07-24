@@ -1,6 +1,6 @@
-shop:
-  - id: 1
-    name: Связной
+supplier:
+  - id: 3
+    name: Svyaznoy
     url: https://svyaznoy.ru/
     filename: svyaznoy.yaml
 categories:

@@ -8,13 +8,63 @@ CONTACT_TYPE_CHOICES = [
     ('shop', 'Магазин'),
 ]
 
+ORDER_STATES = (
+    ('basket', 'Статус корзины'),
+    ('new', 'Новый'),
+    ('confirmed', 'Подтвержден'),
+    ('assembled', 'Собран'),
+    ('sent', 'Отправлен'),
+    ('delivered', 'Доставлен'),
+    ('canceled', 'Отменен'),
+)
+
+
+class UserManager(BaseUserManager):
+    """
+    Миксин для управления пользователями
+    """
+    use_in_migrations = True
+
+    def _create_user(self, email, password, **extra_fields):
+        """
+        Create and save a user with the given username, email, and password.
+        """
+        if not email:
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(email, password, **extra_fields)
+
 class User(AbstractUser):
     """
     Базовый класс для реализации объекта пользователя
     """
-    username = models.CharField(max_length=150,
-                                verbose_name='Имя пользователя', unique=True)
-    email = models.EmailField(verbose_name='email пользователя', unique=True)
+    first_name = models.CharField(max_length=50, blank=False)
+    last_name = models.CharField(max_length=50, blank=False)
+    middle_name = models.CharField(max_length=50, blank=True)
+
+    username = models.CharField(max_length=150, verbose_name='Имя пользователя',
+                                unique=True, blank=False)
+    email = models.EmailField(verbose_name='email пользователя', unique=True,
+                              blank=False)
     register_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -27,22 +77,25 @@ class User(AbstractUser):
         ordering = ('username',)
 
 
-class Shop(models.Model):
+class Company(models.Model):
     """
-    Класс для реализации объекта Магазин
+    Класс для реализации объекта Компания (поставщик, магазин)
     """
-    name = models.CharField(verbose_name='Название магазина', max_length=50, null=True, blank=True)
-    url = models.URLField(verbose_name='Ссылка на сайт магазина', null=True,
+    company_name = models.CharField(verbose_name='Название компании', max_length=50, null=True, blank=True)
+    type = models.CharField(verbose_name='Тип компании', blank=True,
+                            choices=CONTACT_TYPE_CHOICES, max_length=10,
+                            default='shop')
+    url = models.URLField(verbose_name='Ссылка на сайт компании', null=True,
                           blank=True)
     filename = models.CharField(verbose_name='Файл', max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return (f'{self.id}-{self.name}')
+        return (f'{self.id}-{self.company_name}')
 
     class Meta:
-        verbose_name = 'Магазин'
-        verbose_name_plural = 'Список магазинов'
-        ordering = ('name',)
+        verbose_name = 'Поставщик'
+        verbose_name_plural = 'Список поставщиков'
+        ordering = ('company_name',)
 #
 
 class Category(models.Model):
@@ -50,7 +103,7 @@ class Category(models.Model):
     Класс для реализации объекта Категория продуктов
     """
     name = models.CharField(verbose_name='Название категории', max_length=50)
-    shops = models.ManyToManyField(Shop, verbose_name='Магазины',
+    companies = models.ManyToManyField(Company, verbose_name='Компании',
                                    related_name='categories', blank=True)
 
     def __str__(self):
@@ -87,7 +140,7 @@ class ProductInfo(models.Model):
     product = models.ForeignKey(Product, verbose_name='Продукт',
                                 related_name='product_infos',
                                 blank=True, on_delete=models.CASCADE)
-    shop = models.ForeignKey(Shop, verbose_name='Магазин', blank=True,
+    company = models.ForeignKey(Company, verbose_name='Компания', blank=True,
                              related_name='product_infos',
                              on_delete=models.CASCADE)
     name = models.CharField(verbose_name='Информация', max_length=50)
@@ -170,7 +223,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, verbose_name='Продукт',
                                 related_name='ordered_items',
                                 blank=True, on_delete=models.CASCADE)
-    shop = models.ForeignKey(Shop, verbose_name='Магазин',
+    company = models.ForeignKey(Company, verbose_name='Компания',
                              related_name='ordered_items',
                              blank=True, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(verbose_name='Количество')
@@ -183,6 +236,23 @@ class OrderItem(models.Model):
         verbose_name_plural = 'Позиции заказов'
 
 
+# class Company(models.Model):
+#     """
+#     Класс для реализации объекта Компания (пользователя)
+#     """
+#     company_name = models.CharField(verbose_name='Название компании',
+#                                     blank=False, max_length=50)
+#     adress = models.CharField(max_length=150, blank=True,
+#                               verbose_name='Фактический адрес')
+#     def __str__(self):
+#         return str(f'{self.id} - {self.company_name}')
+#
+#     class Meta:
+#         verbose_name = 'Компания'
+#         verbose_name_plural = 'Компании'
+#         ordering = ('company_name',)
+
+
 class Contact(models.Model):
     """
     Класс для реализации объекта Контакт (пользователя)
@@ -190,11 +260,17 @@ class Contact(models.Model):
     user = models.ForeignKey(User, verbose_name='Пользователь',
                              related_name='contacts', blank=False,
                              on_delete=models.CASCADE)
-    value = models.CharField(verbose_name='Пояснение', blank=True,
+    value = models.CharField(verbose_name='Значение', blank=True,
                              max_length=50)
-    type = models.CharField(verbose_name='Тип контакта', blank=False,
-                            choices=CONTACT_TYPE_CHOICES, max_length=10,
-                            default='shop')
+    company = models.ForeignKey(Company, verbose_name='Компания',
+                                related_name='contacts', blank=True,
+                                # default='1',
+                                on_delete=models.CASCADE)
+    position = models.CharField(verbose_name='Должность',
+                                blank=True, max_length=50)
+    phone = models.CharField(max_length=20, verbose_name='Телефон', blank=True)
+
+
 
     def __str__(self):
         return str(f'{self.user.username} {self.type}')
@@ -202,4 +278,4 @@ class Contact(models.Model):
     class Meta:
         verbose_name = 'Тип контакта пользователя'
         verbose_name_plural = 'Типы контактов пользователей'
-        ordering = ('type',)
+        ordering = ('user',)
