@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import User, Contact, Category, Company
+from .models import Category, Company, Product, Parameter, ProductParameter, ProductInfo
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+        read_only_fields = ('id',)
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -9,15 +16,35 @@ class CompanySerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 
-class UserSerializer(serializers.ModelSerializer):
+class ParameterSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = Parameter
         fields = '__all__'
         read_only_fields = ('id',)
 
-class ContactSerializer(serializers.ModelSerializer):
-    # user = serializers.PrimaryKeyRelatedField(write_only=True)
-    # company = serializers.PrimaryKeyRelatedField(write_only=True)
+
+class ProductSerializer(serializers.ModelSerializer):
+    category = serializers.StringRelatedField(read_only=True)
     class Meta:
-        model = Contact
-        fields = '__all__'
+        model = Product
+        fields = ('name', 'category',)
+
+
+class ProductInfoSerializer(serializers.ModelSerializer):
+    company = CompanySerializer(read_only=True, many=True)
+    product = ProductSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = ProductInfo
+        fields = ('id', 'product', 'company', 'name', 'quantity', 'price', 'price_rrc')
+        read_only_fields = ('id',)
+
+
+class ProductParameterSerializer(serializers.ModelSerializer):
+    parameter = ParameterSerializer(read_only=True, many=True)
+    product_info = ProductInfoSerializer(read_only=True, many=True)
+    class Meta:
+        model = ProductParameter
+        fields = ('product_info', 'parameter', 'value',)
+
+
