@@ -1,5 +1,19 @@
 from rest_framework import serializers
-from .models import Category, Company, Product, Parameter, ProductParameter, ProductInfo
+from .models import Category, Company, Product, Parameter, ProductParameter, ProductInfo, Contact, User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        read_only_fields = ('id',)
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
+        read_only_fields = ('id',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -31,8 +45,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductInfoSerializer(serializers.ModelSerializer):
-    company = CompanySerializer(read_only=True, many=True)
-    product = ProductSerializer(read_only=True, many=True)
+    company = CompanySerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
 
     class Meta:
         model = ProductInfo
@@ -41,10 +55,12 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 
 
 class ProductParameterSerializer(serializers.ModelSerializer):
-    parameter = ParameterSerializer(read_only=True, many=True)
-    product_info = ProductInfoSerializer(read_only=True, many=True)
+    parameter = ParameterSerializer(read_only=True)
+    product_info = ProductInfoSerializer(read_only=True)
     class Meta:
         model = ProductParameter
-        fields = ('product_info', 'parameter', 'value',)
+        # fields = ('product_info', 'parameter', 'value')
+        fields = '__all__'
+        read_only_fields = ('id',)
 
 

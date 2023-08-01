@@ -103,7 +103,7 @@ class Category(models.Model):
     Класс для реализации объекта Категория продуктов
     """
     name = models.CharField(verbose_name='Название категории', max_length=50)
-    companies = models.ManyToManyField(Company, verbose_name='Компании',
+    company = models.ManyToManyField(Company, verbose_name='Компании',
                                    related_name='categories', blank=True)
 
     def __str__(self):
@@ -234,23 +234,6 @@ class OrderItem(models.Model):
     class Meta:
         verbose_name = 'Позиция заказа'
         verbose_name_plural = 'Позиции заказов'
-
-
-# class Company(models.Model):
-#     """
-#     Класс для реализации объекта Компания (пользователя)
-#     """
-#     company_name = models.CharField(verbose_name='Название компании',
-#                                     blank=False, max_length=50)
-#     adress = models.CharField(max_length=150, blank=True,
-#                               verbose_name='Фактический адрес')
-#     def __str__(self):
-#         return str(f'{self.id} - {self.company_name}')
-#
-#     class Meta:
-#         verbose_name = 'Компания'
-#         verbose_name_plural = 'Компании'
-#         ordering = ('company_name',)
 
 
 class Contact(models.Model):

@@ -4,10 +4,11 @@ from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Category, Company, Contact, Product, Category, ProductInfo
-from .serializers import ProductSerializer, ProductInfoSerializer
+from .models import User, Category, Company, Contact, Product, Category, ProductInfo, ProductParameter
+from .serializers import ProductSerializer, ProductInfoSerializer, CompanySerializer
+from .serializers import UserSerializer, ContactSerializer, ProductParameterSerializer
 from rest_framework.authtoken.models import Token
-from django.shortcuts import render
+
 
 
 class RegisterAccount(APIView):
@@ -168,29 +169,22 @@ class ProductCard(APIView):
         if int(product_id) < 1:
             return JsonResponse({'Status': False, 'Error': 'Wrong product ID'},  status=400)
         else:
-            queryset = ProductInfo.objects.filter(product=str(product_id))
+        #     queryset = ProductInfo.objects.get(product_id=product_id)
+        #     if not queryset:
+        #         return JsonResponse({'Status': False, 'Error': 'There is no such '
+        #                                                        'product ID'},
+        #                             status=400)
+        #
+        # serializer = ProductInfoSerializer(queryset)
+
+            product_info = ProductInfo.objects.get(product_id=product_id)
+            id = product_info.id
+            queryset = ProductParameter.objects.filter(product_info_id=id)
             if not queryset:
-                return JsonResponse({'Status': False, 'Error': 'There is no such '
-                                                               'product ID'},
+                return JsonResponse({'Status': False, 'Error': f'There is no such '
+                                                               f'product ID {product_id}'},
                                     status=400)
 
-        serializer = ProductInfoSerializer(queryset, many=True)
+        serializer = ProductParameterSerializer(queryset, many=True)
 
         return Response(serializer.data)
-def product_view(request, product_id):
-    queryset = Product.objects.get(id=product_id)
-    serializer = ProductSerializer(queryset)
-    product_info = {}
-    product_info['name'] = serializer.data['name']
-    product_info['category'] = serializer.data['category']
-
-    queryset = ProductInfo.objects.get(product_id=product_id)
-    serializer = ProductInfoSerializer(queryset)
-    # product_info['company_name'] = serializer.data['company_name']
-    # product_info['name'] = serializer.data['name']
-    # product_info['quantity'] = serializer.data['quantity']
-    # product_info['price'] = serializer.data['price']
-
-    context = {'product_info': product_info}
-    template = 'product.html'
-    return render(request, template, context)
