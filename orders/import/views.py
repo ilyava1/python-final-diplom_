@@ -13,7 +13,9 @@ class PriceImport(APIView):
     def post(self, request, *args, **kwargs):
         # Если пользователь не аутентифицирован - отказ в продолжении операции
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=401)
+            return JsonResponse({'Status': False,
+                                 'Error': 'Log in required'},
+                                status=401)
 
         # Формируем список компаний типа "поставщик", по которым пользователь
         # зарегистрирован в качестве контакта.
@@ -21,7 +23,8 @@ class PriceImport(APIView):
         company_list = []
         suppliers = Company.objects.filter(type='supplier')
         for company in suppliers:
-            user_contact = Contact.objects.filter(user=request.user, company=company)
+            user_contact = Contact.objects.filter(user=request.user,
+                                                  company=company)
             if user_contact.exists():
                 company_list.append(company.company_name)
 
@@ -37,29 +40,30 @@ class PriceImport(APIView):
         try:
             supplier = Company.objects.get(id=supplier_object['id'])
         except:
+            str = f'Company with id={supplier_object["id"]} ' \
+                  f'{supplier_object["name"]} has not been registered ' \
+                  f'in the database yet. Сomplete the registration before' \
+                  f' loading price'
             return JsonResponse({'Loading status': False,
-                                 'Message': f'Company with id={supplier_object["id"]} '
-                                             f'{supplier_object["name"]} has '
-                                             f'not been registered in the '
-                                             f'database yet. Сomplete the '
-                                             f'registration before loading '
-                                             f'price'}, status=404)
+                                 'Message':  str}, status=404)
 
         # Если поставщик зарегистрирован, проверяем по тому ли поставщику
         # зарегистрирован пользователь.
         # Если не по тому - отказ в продолжении операции
         if supplier_object['name'] not in company_list:
+            str = f'Price from company {supplier_object["name"]}, ' \
+                  f'but you registered from following company(ies) ' \
+                  f'{company_list}'
             return JsonResponse({'Loading status': False,
-                                 'Message': f'Price from company {supplier_object["name"]}, '
-                                            f'but you registered from following company(ies) '
-                                            f'{company_list}'}, status=403)
+                                 'Message': str}, status=403)
 
         # Далее приступаем к загрузке прайса
         # Снчала загружаем категории:
         category_objects = dict_from_yaml['categories']
 
         for category_object in category_objects:
-            category = Category(id=category_object['id'], name=category_object['name'])
+            category = Category(id=category_object['id'],
+                                name=category_object['name'])
             category.save()
             category.companies.add(supplier_object['id'])
 
@@ -71,7 +75,8 @@ class PriceImport(APIView):
             product.save()
 
             # Загружаем информацию о товарах
-            existing_prod_info = list(ProductInfo.objects.filter(product_id=product.id))
+            existing_prod_info = list(ProductInfo.objects.filter(
+                product_id=product.id))
             if existing_prod_info == []:
                 # Если информации по продукту нет - добавляем ее в базу
                 product_info = ProductInfo(product_id=good_object['id'],
@@ -92,23 +97,28 @@ class PriceImport(APIView):
             product_info.save()
 
             # Загружаем информацию о параметрах продукта
-            for parameter_name, parameter_value in good_object['parameters'].items():
-                existing_parameter = list(Parameter.objects.filter(name=parameter_name))
+            for parameter_name, parameter_value in (
+                    good_object['parameters'].items()):
+                existing_parameter = list(Parameter.objects.filter(
+                    name=parameter_name))
                 if existing_parameter == []:
                     parameter = Parameter(name=parameter_name)
                     parameter.save()
-                    product_parameter = ProductParameter(product_info_id=product_info.id,
-                                                         parameter_id=parameter.id,
-                                                         value=parameter_value)
+                    product_parameter = ProductParameter(
+                        product_info_id=product_info.id,
+                        parameter_id=parameter.id,
+                        value=parameter_value)
                 else:
-                    product_parameter = ProductParameter(product_info_id=product_info.id,
-                                                         parameter_id=existing_parameter[0].id,
-                                                         value=parameter_value)
+                    product_parameter = ProductParameter(
+                        product_info_id=product_info.id,
+                        parameter_id=existing_parameter[0].id,
+                        value=parameter_value)
                 product_parameter.save()
 
-
         return JsonResponse({'Status': True,
-                             'Message': f'Loading price of {supplier.company_name} completed successfully'})
+                             'Message': f'Loading price of '
+                                        f'{supplier.company_name} '
+                                        f'completed successfully'})
 
 
     def get(self, request, *args, **kwargs):

@@ -61,10 +61,11 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=50, blank=False)
     middle_name = models.CharField(max_length=50, blank=True)
 
-    username = models.CharField(max_length=150, verbose_name='Имя пользователя',
+    username = models.CharField(max_length=150,
+                                verbose_name='Имя пользователя',
                                 unique=True, blank=False)
-    email = models.EmailField(verbose_name='email пользователя', unique=True,
-                              blank=False)
+    email = models.EmailField(verbose_name='email пользователя',
+                              unique=True, blank=False)
     register_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -81,13 +82,15 @@ class Company(models.Model):
     """
     Класс для реализации объекта Компания (поставщик, магазин)
     """
-    company_name = models.CharField(verbose_name='Название компании', max_length=50, null=True, blank=True)
+    company_name = models.CharField(verbose_name='Название компании',
+                                    max_length=50, null=True, blank=True)
     type = models.CharField(verbose_name='Тип компании', blank=True,
                             choices=CONTACT_TYPE_CHOICES, max_length=10,
                             default='shop')
     url = models.URLField(verbose_name='Ссылка на сайт компании', null=True,
                           blank=True)
-    filename = models.CharField(verbose_name='Файл', max_length=50, null=True, blank=True)
+    filename = models.CharField(verbose_name='Файл', max_length=50,
+                                null=True, blank=True)
 
     def __str__(self):
         return (f'{self.id}-{self.company_name}')
@@ -180,7 +183,8 @@ class ProductParameter(models.Model):
                                      related_name='product_parameters',
                                      verbose_name='Информация о продукте',
                                      blank=True, on_delete=models.CASCADE)
-    parameter = models.ForeignKey(Parameter, related_name='product_parameters',
+    parameter = models.ForeignKey(Parameter,
+                                  related_name='product_parameters',
                                   verbose_name='Параметр',
                                   on_delete=models.CASCADE)
     value = models.CharField(verbose_name='Значение', max_length=100)
@@ -202,7 +206,8 @@ class Order(models.Model):
                              related_name='orders', blank=True,
                              on_delete=models.CASCADE)
     register_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(verbose_name='Статус', max_length=50)
+    status = models.CharField(verbose_name='Статус', max_length=50,
+                              choices=ORDER_STATES, default='basket')
 
     def __str__(self):
         return str(f'{self.register_date} {self.status}')
@@ -229,7 +234,8 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(verbose_name='Количество')
 
     def __str__(self):
-        return str(f'{self.id}-{self.order.id}-{self.product.name}-{self.quantity}')
+        return str(f'{self.id}-{self.order.id}-{self.product.name}-'
+                   f'{self.quantity}')
 
     class Meta:
         verbose_name = 'Позиция заказа'
@@ -251,7 +257,8 @@ class Contact(models.Model):
                                 on_delete=models.CASCADE)
     position = models.CharField(verbose_name='Должность',
                                 blank=True, max_length=50)
-    phone = models.CharField(max_length=20, verbose_name='Телефон', blank=True)
+    phone = models.CharField(max_length=20, verbose_name='Телефон',
+                             blank=True)
 
 
 
