@@ -1,8 +1,8 @@
 supplier:
-  - id: 3
-    name: Svyaznoy
-    url: https://svyaznoy.ru/
-    filename: svyaznoy.yaml
+  - id: 2
+    name: reStore
+    url: https://restore.ru/
+    filename: restore.yaml
 categories:
   - id: 224
     name: Смартфоны

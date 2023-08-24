@@ -96,8 +96,8 @@ class Company(models.Model):
         return (f'{self.id}-{self.company_name}')
 
     class Meta:
-        verbose_name = 'Поставщик'
-        verbose_name_plural = 'Список поставщиков'
+        verbose_name = 'Компания'
+        verbose_name_plural = 'Список компаний'
         ordering = ('company_name',)
 #
 
@@ -253,7 +253,6 @@ class Contact(models.Model):
                              max_length=50)
     company = models.ForeignKey(Company, verbose_name='Компания',
                                 related_name='contacts', blank=True,
-                                # default='1',
                                 on_delete=models.CASCADE)
     position = models.CharField(verbose_name='Должность',
                                 blank=True, max_length=50)

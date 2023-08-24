@@ -1,7 +1,5 @@
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from .models import (User, Order, Company, Contact, Product, ProductInfo,
                      ProductParameter, OrderItem, ORDER_STATES,
                      CONTACT_TYPE_CHOICES)
@@ -10,6 +8,8 @@ from .serializers import (ProductSerializer, ProductInfoSerializer,
                           ContactSerializer, ProductParameterSerializer,
                           OrderSerializer, OrderItemSerializer)
 from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 def is_product_id_exists(product_id, order_id=None):
@@ -160,139 +160,120 @@ class RegisterAccount(APIView):
     """
 
     def post(self, request, *args, **kwargs):
-        contact_save_ready_status = True
-        contact_save_dict = {}
-        # Сначала проверяем компанию
-        if {'company_name'}.issubset(request.data):
-            exist_company = Company.objects.filter(
-                company_name=request.data['company_name'])
-            if exist_company.exists() == False:
-                str = f'Info: Company {request.data["company_name"]} ' \
-                      f'does not exist in the database yet'
-                contact_save_dict['Company_check'] = str
-            else:
-                str = f'Info: Company {request.data["company_name"]} ' \
-                      f'already exists in the database'
-                contact_save_dict['Company_check'] =  str
-        else:
-            contact_save_ready_status = False
-            contact_save_dict['Company_check'] = 'Error! Company_name required'
+        # Сначала проверяем что все необходимые данные есть в запросе
+        if not {'first_name', 'last_name', 'middle_name', 'username', 'email',
+            'password', 'position', 'phone', 'company_name',
+            'adress'}.issubset(request.data):
+            return JsonResponse({'Status': 'Registration IS NOT allowed',
+                                 'Detailes': 'Following fields are required:'
+                                             ' first_name, last_name, '
+                                             'middle_name, username, email, '
+                                             'password, position, phone, '
+                                             'company_name'}, status=400)
+        # и что не одно поле не содержит пустую строку
+        exceptions = []
+        for field in request.data:
+            if field == '':
+                exceptions.append(field)
+        if exceptions:
+            return JsonResponse({'Status': 'Registration IS NOT allowed',
+                                 'Detailes': f'{exceptions} field(s) '
+                                             f'required'}, status=400)
 
-        # Далее проверяем пользователя
-        if {'first_name', 'last_name', 'username',
-            'email'}.issubset(request.data):
-            exist_user = User.objects.filter(email=request.data['email'])
-            if exist_user.exists() == False:
-                str = f'Info: User {request.data["username"]} ' \
-                      f'doesnt exist in the database yet'
-                contact_save_dict['User_check'] = str
-            else:
-                str = f'Info: User {request.data["username"]} ' \
-                      f'already exist in the database yet'
-                contact_save_dict['User_check'] = str
-        else:
-            contact_save_ready_status = False
-            contact_save_dict['User_check'] = 'Error! one of required ' \
-                                              'fields is empty '
+        # Проверяем есть ли в базе данных компания с именем,
+        # указанным в запросе. Если компании нет в базе, регистрация запрещена
+        exist_company = Company.objects.filter(
+                                company_name=request.data['company_name'])
+        if exist_company.exists() == False:
+            info_str = f'Error! Company {request.data["company_name"]} ' \
+                  f'does not exist in the database yet. ' \
+                  f'Before user registration you should ' \
+                  f'register company first.' \
+                  f'Сontact the administrator.'
+            return JsonResponse({'Status': 'Registration IS NOT allowed',
+                                 'Detailes': info_str}, status=400)
+
+        # Пользователя не проверяем, есть он или нет в базе -
+        # это не важно для регистрации контакта
 
         # Далее проверяем контакт
-        if exist_user.exists() == True and exist_company.exists() == True:
+        # Новый контакт не создается только в том случае если контакт
+        # с такой парой (user - company) уже существует
+        exist_user = User.objects.filter(email=request.data['email'])
+        if exist_user:
             if Contact.objects.filter(user=exist_user[0].id,
                                       company=exist_company[0].id
-                                      ).exists() == False:
-                str = f'Info: Contact {request.data["username"]} ' \
-                      f'from {request.data["company_name"]} ' \
-                      f'doesnt exist in the database yet'
-                contact_save_dict['Contact_check'] = str
-            else:
-                contact_save_ready_status = False
-                str = f'Error! Contact {request.data["username"]} from ' \
-                      f'{request.data["company_name"]} ' \
-                      f'already exists in the database'
-                contact_save_dict['Contact_check'] = str
-        else:
-            str = f'Info: Contact {request.data["username"]} ' \
-                  f'from {request.data["company_name"]} ' \
-                  f'doesnt exist in the database yet'
-            contact_save_dict['Contact_check'] = str
+                                      ).exists() == True:
+                info_str = f'Contact with pair ' \
+                           f'({request.data["email"]}' \
+                           f' + {request.data["company_name"]}) ' \
+                           f'already exists in the database.'
+                return JsonResponse({'Status': 'Registration IS NOT allowed',
+                                     'Detailes': info_str}, status=400)
 
-        if contact_save_ready_status == False:
-            return JsonResponse({'Status': False,
-                                 'Detailes': contact_save_dict})
 
-        # -------------------------------------------------------------
-
-        # Если проверки компании и пользователя пройдены,
-        # то сохраняем новые объекты в базе
+        # Если проверки компании и пользователя пройдены
+        # (contact_save_ready_status = True), то сохраняем новые объекты
         input_data = request.data
 
-        # Сохраняем компанию
-        company_serializer = CompanySerializer(data=request.data)
-        if company_serializer.is_valid():
-            if exist_company.exists() == False:
-                new_company = company_serializer.save()
+        # Создаем компанию если она не существует
+        if exist_company.exists() == False:
+            company_serializer = CompanySerializer(data=request.data)
+            if company_serializer.is_valid():
+                try:
+                    new_company = company_serializer.save()
+                except:
+                    return JsonResponse({'Status': False,
+                                         'Error': 'company_serializer.save '
+                                                  'method fault'})
                 input_data['company'] = new_company.id
             else:
-                input_data['company'] = exist_company[0].id
+                return JsonResponse({'Status': False,
+                                 'Error': company_serializer.errors})
         else:
-            contact_save_dict['Company_serializer'] = company_serializer.errors
-            return JsonResponse({'Status': False,
-                                 'Detailes': contact_save_dict})
+            input_data['company'] = exist_company[0].id
 
-        # Сохраняем пользователя
-        user_serializer = UserSerializer(data=request.data)
-        if user_serializer.is_valid():
-            if exist_user.exists() == False:
-                new_user = user_serializer.save()
-                new_user.set_password(request.data['password'])
-                new_user.save()
-                input_data['user'] = new_user.id
+        # Создаем пользователя если он не сущетвует
+        if exist_user.exists() == False:
+            user_serializer = UserSerializer(data=request.data)
+            if user_serializer.is_valid():
+                try:
+                    new_user = user_serializer.save()
+                except:
+                    return JsonResponse({'Status': False,
+                                         'Error': 'user_serializer.save '
+                                                  'method fault'})
+                if new_user:
+                    new_user.set_password(request.data['password'])
+                    new_user.save()
+                    input_data['user'] = new_user.id
             else:
-                input_data['user'] = exist_user[0].id
+                return JsonResponse({'Status': False,
+                                 'Error': user_serializer.errors})
         else:
-            contact_save_dict['User_serializer'] = user_serializer.errors
-            return JsonResponse({'Status': False,
-                                 'Detailes': contact_save_dict})
+            input_data['user'] = exist_user[0].id
 
         # Сохраняем контакт
         contact_serializer = ContactSerializer(data=input_data)
         if contact_serializer.is_valid():
-            new_contact = contact_serializer.save()
+            try:
+                new_contact = contact_serializer.save()
+            except:
+                return JsonResponse({'Status': False,
+                                     'Error': 'contact_serializer.save '
+                                              'method fault'})
             status_dict = {'Status': True,
-                           'Detailes': f'Registration of contact '
-                                       f'id={new_contact.id}, '
-                                       f'user_name={new_user.username}, '
-                                       f'company={new_company.company_name} '
-                                       f'completed successfully'}
-            return JsonResponse(status_dict)
+                   'Detailes': f'Registration of the new contact '
+                               f'(id={new_contact.id}, '
+                               f'user_name={new_contact.user.username}, '
+                               f'company={new_contact.company.company_name}) '
+                               f'completed successfully.'}
+            return JsonResponse(status_dict, status=200)
         else:
-            contact_save_dict['Contact_serializer'] = contact_serializer.errors
             return JsonResponse({'Status': False,
-                                 'Detailes': contact_save_dict})
+                                 'Detailes': contact_serializer.errors})
 
-
-class LoginAccount(APIView):
-    """
-    Класс для авторизации пользователей
-    """
-    def post(self, request, *args, **kwargs):
-        request_data = request.data
-        if {'username', 'password'}.issubset(request.data):
-            user = authenticate(request, username=request.data['username'],
-                                password=request.data['password'])
-            if user is not None:
-                if user.is_active:
-                    token = Token.objects.get_or_create(user=user)
-                    return JsonResponse({'Status': True,
-                                         'Use your token': str(token[0])})
-
-            return JsonResponse({'Status': False,
-                                 'Errors': f'User {request.data["username"]} '
-                                           f'hasnt registered yet'})
-
-        return JsonResponse({'Status': False, 'Errors': 'Both "username" and '
-                                                        '"password" fields '
-                                                        'required'})
+#-----------------------------------------------------------------------------
 
 
 class ProductCatalog(APIView):
@@ -520,11 +501,10 @@ class DelFromOrder(APIView):
             new_quantity = order_item.quantity - int(quantity)
         else:
             return Response({'Status': False,
-                                 'Error': 'Quantity in request is greater '
-                                          'then quantity in order item'},
+                                 'Error': f'Quantity in request (={quantity})'
+                                          f' is greater then quantity in order'
+                                          f' item (={order_item.quantity})'},
                                 status=400)
-        # Если новое кол-во продукта = 0, то строчку из заказа надо удалить
-
 
         # Обновляем строчку заказа новым количеством продукта
         order_item_serializer = OrderItemSerializer(
@@ -590,7 +570,7 @@ class ViewOrder(APIView):
                                  'Error': 'Log in required'},
                                 status=401)
 
-        # Проверка, создавал ли заказ пользователь, выполняющий запрос
+        # Проверяем корректен ли номер заказа
         order_id = kwargs['order_id']
         try:
             order = Order.objects.get(id=order_id)
@@ -598,14 +578,8 @@ class ViewOrder(APIView):
             return Response({'Status': False,
                              'Error': f'Wrong order id={order_id}.'},
                             status=400)
-        if order.user.id != request.user.id:
-            return Response({'Status': False,
-                      'Error': f'Order id={order_id} created by user '
-                               f'id={order.user.id} '
-                               f'But request from user '
-                               f'id={request.user.id}'},
-                     status=400)
 
+        # Далее производится расчет стоимости позиции и заказа вцелом
         # Сохраняем в словаре данные по ордеру
         order_serializer = OrderSerializer(order)
         order_data = {}
@@ -692,56 +666,77 @@ class ChangeOrderStatus(APIView):
                              'Error': f'Wrong order status={order_status}.'},
                              status=400)
 
-        # Выясняем статус компании пользователя, от этого будет зависеть
-        # какие статусы сможет присваивать пользователь заказу
+        # Выясняем представителем какой компании является пользователь,
+        # от этого будет зависеть какие статусы сможет присваивать
+        # пользователь заказу
 
-        contact = Contact.objects.filter(id='1') # filter(user='2')
+        contact = Contact.objects.filter(user=request.user.id)
         if contact.exists():
             company = Company.objects.get(id=contact[0].company.id)
 
-        # Проверям яляется ли пользователь из запроса создателем заказа
-        # и только ли разрешенные статусы пытается применить
+        # Проверям яляется ли пользователь из запроса создателем заказа,
+        # представляет магазин и только ли разрешенные статусы пытается применить
 
         if ((order.user.id == request.user.id) and
                 (company.type in CONTACT_TYPE_CHOICES[1])):
+            # Если да, то пользователь - покупатель и имеет право на установку
+            # статусов basket, new, canceled
             if (order_status in ORDER_STATES[0]) \
                     or (order_status in ORDER_STATES[1]) \
                     or (order_status in ORDER_STATES[6]):
-            # Если да, то пользователь - покупатель и имеет право на установку
-            # статусов basket, new, canceled
-                data = {'status': order_status}
-                order_serializer = OrderSerializer(order, data=data)
-                if order_serializer.is_valid():
-                    order_serializer.save()
+                if not (order.status == 'delivered'
+                        and order_status == 'canceled'):
+                    data = {'status': order_status}
+                    order_serializer = OrderSerializer(order, data=data)
+                    if order_serializer.is_valid():
+                        order_serializer.save()
+                    else:
+                        return Response({'Status': False,
+                                     'Error': {order_serializer.errors}},
+                                    status=500)
                 else:
                     return Response({'Status': False,
-                                 'Error': {order_serializer.errors}},
-                                status=500)
+                                     'Error': f'Delivered order can not '
+                                              f'be canceled'},
+                                    status=400)
             else:
                 return Response({'Status': False,
                                  'Error': f'You cant assign '
                                           f'status={order_status}.'},
                                  status=400)
-        else:
-            # Иначе пользователь - менеджер по продажам и имеет право на
+        elif company.type in CONTACT_TYPE_CHOICES[0]:
+            # Иначе проверяем что пользователь - менеджер по продажам и имеет право на
             # установку статусов confirmed, assembled, sent, delivered
             if (order_status in ORDER_STATES[2]) \
                 or (order_status in ORDER_STATES[3]) \
                 or (order_status in ORDER_STATES[4]) \
                 or (order_status in ORDER_STATES[5]):
-                data = {'status': order_status}
-                order_serializer = OrderSerializer(order, data=data)
-                if order_serializer.is_valid():
-                    order_serializer.save()
+                if not order.status == 'canceled':
+                    data = {'status': order_status}
+                    order_serializer = OrderSerializer(order, data=data)
+                    if order_serializer.is_valid():
+                        order_serializer.save()
+                    else:
+                        return Response({'Status': False,
+                                     'Error': {order_serializer.errors}},
+                                    status=500)
                 else:
                     return Response({'Status': False,
-                                 'Error': {order_serializer.errors}},
-                                status=500)
+                                     'Error': f'Canceled orders can not '
+                                              f'be moved to a different '
+                                              f'status by the supplier'},
+                                    status=400)
             else:
                 return Response({'Status': False,
                                  'Error': f'You cant assign '
                                           f'status={order_status}.'},
                                 status=400)
+
+        else:
+            return Response({'Status': False,
+                             'Error': f'You cant assign '
+                                      f'status for tis order.'},
+                            status=400)
 
         return Response({'Status': True,
                          'Detales': f'For order id={order_id}'

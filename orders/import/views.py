@@ -28,17 +28,26 @@ class PriceImport(APIView):
             if user_contact.exists():
                 company_list.append(company.company_name)
 
-        # Если пользователь авторизован, читаем файл с прайсом
+        # Если пользователь не является представителем компании-поставщика
+        # формируем отказ в продолжении загрузки прайса
+        if not company_list:
+            return JsonResponse({'Status': 'Download failure',
+                                 'Error': f'User {request.user.username} '
+                                          f'is not a representative of '
+                                          f'the supplier company'},
+                                status=401)
+
         file_path = os.getcwd() + '\\supplier1.yaml'
         fl = open(file_path, 'r', encoding='utf-8')
         dict_from_yaml = load_yaml(fl, Loader=Loader)
         fl.close()
 
-        # Проверяем наличие поставщика в базе.
+        # Проверяем наличие поставщика из прайса в базе.
         # Если в базе нет такого поставщика - отказ в продолжении операции
         supplier_object = dict_from_yaml['supplier'][0]
         try:
-            supplier = Company.objects.get(id=supplier_object['id'])
+            supplier = Company.objects.get(id=supplier_object['id'],
+                                           company_name=supplier_object['name'])
         except:
             str = f'Company with id={supplier_object["id"]} ' \
                   f'{supplier_object["name"]} has not been registered ' \
@@ -58,14 +67,14 @@ class PriceImport(APIView):
                                  'Message': str}, status=403)
 
         # Далее приступаем к загрузке прайса
-        # Снчала загружаем категории:
+        # Сначала загружаем категории:
         category_objects = dict_from_yaml['categories']
 
         for category_object in category_objects:
             category = Category(id=category_object['id'],
                                 name=category_object['name'])
             category.save()
-            category.companies.add(supplier_object['id'])
+            category.company.add(supplier_object['id'])
 
         # Загружаем товары:
         goods_objects = dict_from_yaml['goods']
@@ -119,8 +128,3 @@ class PriceImport(APIView):
                              'Message': f'Loading price of '
                                         f'{supplier.company_name} '
                                         f'completed successfully'})
-
-
-    def get(self, request, *args, **kwargs):
-        return JsonResponse({'Status': False,
-                             'Errors': 'Dump price procedure stopper'})
