@@ -8,9 +8,12 @@ from backend_app.models import Parameter, ProductParameter, Contact
 
 class PriceImport(APIView):
     """
-    Класс для загрузки/обновления данных о прайсе магазин.
+    Класс для загрузки/обновления данных о прайсе компании
     """
     def post(self, request, *args, **kwargs):
+        """
+        Функция загрузки/обновления прайс-листа компании
+        """
         # Если пользователь не аутентифицирован - отказ в продолжении операции
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,

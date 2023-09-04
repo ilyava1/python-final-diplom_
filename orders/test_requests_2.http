@@ -1,0 +1,344 @@
+### 1. РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЕЙ
+
+### 1.1. Регистрация пользователя магазина
+POST http://127.0.0.1:8000/api/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Alex",
+  "last_name": "Alekseev",
+  "middle_name": "Ivanovich",
+  "username": "aalex",
+  "email": "aalex1@mail.ru",
+  "password": "1qaz2wsx",  
+  "position": "Purchase manager",
+  "phone": "8-926-123-44-55",
+  "company_name": "Mobilka",
+  "adress": "Moscow, Brateevskaya, 4"  
+}
+
+### 1.2 Регистрация пользователя поставщика
+POST http://127.0.0.1:8000/api/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Igor",
+  "last_name": "Korolev",
+  "middle_name": "Ivanovich",
+  "username": "ikorol",
+  "email": "ikorol@mail.ru",
+  "password": "1qaz2wsx",   
+  "position": "Sales manager",
+  "phone": "8-926-443-23-43",
+  "company_name": "reStore",
+  "adress": "Moscow, Murmansky pr, 8" 
+}
+
+### Попытки некорректных запросов
+### 1.3 Попытка регистрации c неполными данными
+POST http://127.0.0.1:8000/api/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Ivan",
+  "last_name": "Ivanov",
+  "middle_name": "Ivanovich",
+  "username": "iivan"
+}
+
+### 1.4 Попытка регистрации с пустыми строками
+### вместо значений атрибутов
+POST http://127.0.0.1:8000/api/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Ivan",
+  "last_name": "Ivanov",
+  "middle_name": "Ivanovich",
+  "username": "",
+  "email": "iivan@mail.ru",
+  "password": "1qaz2wsx",   
+  "position": "Ivanovo branch director",
+  "phone": "",
+  "company_name": "",
+  "adress": "Ivanova, Moskovskay ul, 8" 
+}
+
+### 1.5 Попытка регистрации уже существующего
+### контакта (пары емейл + компания)
+POST http://127.0.0.1:8000/api/user/register/
+Content-Type: application/json
+
+{
+  "first_name": "Alex",
+  "last_name": "Alekseev",
+  "middle_name": "Ivanovich",
+  "username": "aalex",
+  "email": "aalex1@mail.ru",
+  "password": "1qaz2wsx",  
+  "position": "Purchase manager",
+  "phone": "8-926-123-44-55",
+  "company_name": "Mobilka",
+  "adress": "Moscow, Brateevskaya, 4"  
+}
+
+
+### 2. АВТОРИЗАЦИЯ ПОЛЬЗОВАТЕЛЕЙ
+
+### 2.1 Авторизация пользователя магазина
+POST http://127.0.0.1:8000/api/user/api-token-auth/
+Content-Type: application/json
+
+{  
+  "username": "aalex",  2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+  "password": "1qaz2wsx"  
+}
+### Получаем токен: 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 2.2 Авторизация пользователя поставщика
+POST http://127.0.0.1:8000/api/user/api-token-auth/
+Content-Type: application/json
+
+{  
+  "username": "ikorol",  
+  "password": "1qaz2wsx"  
+}
+### Получаем токен: 68b488080999a325db2e054a71a1784d82709c1c
+
+### 2.3 Попытка авторизации, некорректные поля
+POST http://127.0.0.1:8000/api/user/api-token-auth/
+Content-Type: application/json
+
+{  
+  "user_name": "ikorol",  
+  "pass_word": "1qaz2wsx"  
+}
+
+### 2.4 Попытка авторизации, незарегистрированный юзер
+POST http://127.0.0.1:8000/api/user/api-token-auth/
+Content-Type: application/json
+
+{  
+  "username": "iamkorol",  
+  "password": "1qaz2wsx"  
+}
+
+
+### 3. ЗАГРУЗКА ПРАЙСА
+
+### 3.1 Загружка прайса от авторизованного пользователя
+### поставщика (ikorol, reStore)
+POST http://127.0.0.1:8000/import/price_import/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c
+
+### 3.2 Попытка загрузки прайса от неавторизованного 
+### пользователя
+POST http://127.0.0.1:8000/import/price_import/
+
+
+### 3.3 Попытка загрузки прайса от авторизованного 
+### пользователя типа покупатель
+POST http://127.0.0.1:8000/import/price_import/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 3.4 Попытка загрузки прайса компании, которой нет в базе.
+### Предварительно в файле supplier.yaml поменять id и/или name поставщика
+POST http://127.0.0.1:8000/import/price_import/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c
+
+
+### 4. ПРОСМОТР КАТАЛОГА ПРОДУКТОВ
+
+### 4.1 Просмотр каталога продуктов пользователем магазина
+GET http://127.0.0.1:8000/api/product/catalog/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 4.2 Просмотр карточки определенного продукта, id=4216292 
+GET http://127.0.0.1:8000/api/product/catalog/4216292/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 4.3 Просмотр каталога продуктов неавторизованным пользователем
+GET http://127.0.0.1:8000/api/product/catalog/
+
+### 4.4 Просмотр карточки определенного продукта. 
+### Некорректный ID продукта - с буквами
+GET http://127.0.0.1:8000/api/product/catalog/1qw23e/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 4.5 Просмотр карточки определенного продукта. 
+### Еще один некорректный ID продукта - не существует
+GET http://127.0.0.1:8000/api/product/catalog/12345/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 4.6 Просмотр карточки определенного продукта. 
+### Еще один некорректный ID продукта - ноль
+GET http://127.0.0.1:8000/api/product/catalog/0/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 4.7 Просмотр карточки определенного продукта. 
+### Неавторизованный пользователь
+GET http://127.0.0.1:8000/api/product/catalog/4216292/
+
+
+### 5. ДОБАВЛЕНИЕ ПРОДУКТОВ В ЗАКАЗ
+
+### 5.1 Создание заказа и добавление продукта в Заказ, 
+### id продукта=4216292, id компании=2, количество=2
+POST http://127.0.0.1:8000/api/product/order/add/4216292/2/2/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 5.2 Добавление того же продукта в Заказ, 
+### id продукта=4216292, id компании=2, количество=1
+POST http://127.0.0.1:8000/api/product/order/add/4216292/2/1/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 5.3 Добавление другого продукта в Заказ, 
+### id продукта=4216313, id компании=2, количество=4
+POST http://127.0.0.1:8000/api/product/order/add/4216313/2/4/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 5.4 Добавление продукта в Заказ от неавторизованного пользователя
+### id продукта=4216292, id компании=2, количество=1
+POST http://127.0.0.1:8000/api/product/order/add/4216292/3/1/
+
+
+### 5.5 Добавление продукта с несуществующим id в Заказ, 
+###id продукта=4445566, id компании=2, количество=3
+POST http://127.0.0.1:8000/api/product/order/add/4445566/3/3/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 5.6 Добавление продукта с несуществующим id компании в Заказ, 
+### id продукта=4216313, id компании=33, количество=2
+POST http://127.0.0.1:8000/api/product/order/add/4216313/33/2/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 5.7 Добавление продукта в Заказ, с количеством, большим, чем есть
+### в базе. id продукта=4216292, id компании=2, количество=20
+POST http://127.0.0.1:8000/api/product/order/add/4216292/2/20/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 6. УДАЛЕНИЕ ПРОДУКТОВ ИЗ ЗАКАЗА
+
+### 6.1 Удаление продукта из заказа, 
+### id заказа=1, id продукта=4216292, id компании=2, 
+### удаляемое количество 1
+DELETE http://127.0.0.1:8000/api/product/order/delete/1/4216292/2/1/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 6.2 Удаление продукта из заказа неавторизованным пользователем
+DELETE http://127.0.0.1:8000/api/product/order/delete/51/4216292/2/2/
+
+
+### 6.3 Удаление продукта из несуществующего заказа, id заказа=100,
+DELETE http://127.0.0.1:8000/api/product/order/delete/100/4216292/2/2/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 6.4 Удаление продукта  с неверным id из заказа, id заказа=1,
+### id продукта=9216292
+DELETE http://127.0.0.1:8000/api/product/order/delete/1/9216292/2/1/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 6.5 Удаление продукта из заказа
+### в запросе неверный id компании=9, 
+DELETE http://127.0.0.1:8000/api/product/order/delete/1/4216292/9/2/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+### 6.6 Удаление продукта из заказа, 
+### id заказа=1, id продукта=4216292, id компании=2, 
+### удаляемое количество превышает кол-во в заказе и =20
+DELETE http://127.0.0.1:8000/api/product/order/delete/1/4216292/2/20/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+
+
+### 7. ПРОСМОТР ЗАКАЗОВ И ИСТОРИИ
+
+### 7.1 Просмотр заказа, id=1
+GET http://127.0.0.1:8000/api/product/order/view_order/1/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+### 7.2 Просмотр заказа c несуществующим id=10
+GET http://127.0.0.1:8000/api/product/order/view_order/10/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+### 7.3. Просмотр истории заказов
+GET http://127.0.0.1:8000/api/product/order/view_order_history/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+
+### 8. ИЗМЕНЕНИЕ СТАТУСОВ ЗАКАЗОВ
+
+### 8.1 Менеджер магазина. Назначает статус new, id=1
+POST http://127.0.0.1:8000/api/product/change_order_status/1/new/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+### 8.2 Менеджер поставщика. Назначает статус confirmed, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/confirmed/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 
+
+### 8.3 Менеджер поставщика. Назначает статус assembled, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/assembled/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 
+
+### 8.4 Менеджер поставщика. Назначает статус sent, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/sent/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 
+
+### 8.5 Менеджер поставщика. Назначает статус delivered, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/delivered/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 
+
+### 8.6 Менеджер магазина. Пытается отменить доставленный заказ, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/canceled/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+### 8.7 Менеджер поставщика. Назначает статус assembled, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/assembled/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 
+
+### 8.8 Менеджер магазина. Назначает сатус canceled, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/canceled/
+Content-Type: application/json
+Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
+
+### 8.9 Менеджер поставщика. Пытается отправить отмененный заказ, id=1
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/sent/
+Content-Type: application/json
+Authorization: Token 68b488080999a325db2e054a71a1784d82709c1c 

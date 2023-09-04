@@ -10,9 +10,17 @@ from .serializers import (ProductSerializer, ProductInfoSerializer,
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets
 
 
 def is_product_id_exists(product_id, order_id=None):
+    """
+    Функция проверки товара на существование в базе данных
+    или в заказе.
+    :param product_id: идентификатор продукта для проверки
+    :param order_id: идентификатор заказа, если необходимо
+    :return: объект продукта или словарь с описанием ошибки.
+    """
     try:
         int(product_id)
     except:
@@ -43,6 +51,15 @@ def is_product_id_exists(product_id, order_id=None):
 
 
 def is_company_id_exists(company_id, product_id=None, order_id=None):
+    """
+    Функция проверки компании на существование в базе данных или
+    проверки связки продукт-компания или
+    проверки связки продукт-компания-заказ
+    :param company_id: идентификатор компании
+    :param product_id: идентификатор продукта, если необходимо
+    :param order_id: идентификатор заказа, если необходимо
+    :return: объект компании или словарь с описанием ошибки.
+    """
     try:
         int(company_id)
     except:
@@ -74,6 +91,14 @@ def is_company_id_exists(company_id, product_id=None, order_id=None):
 
 
 def is_quantity_exists(product_id, company_id, quantity):
+    """
+    Функция проверки компании на существование заданого количества
+    товара у компании
+    :param product_id: идентификатор продукта
+    :param company_id: идентификатор компании
+    :param quantity: количество товара
+    :return: объект ProductInfo или словарь с описанием ошибки
+    """
     try:
         сurrent_product_info = ProductInfo.objects.get(product=product_id,
                                                        company=company_id)
@@ -102,6 +127,12 @@ def is_quantity_exists(product_id, company_id, quantity):
 
 
 def is_user_order_exists(request, order_id=None):
+    """
+    Функция проверки заказа пользователя на существование в базе данных
+    :param request: объект запроса
+    :param order_id: идентификатор заказа, если необходимо
+    :return: идентификатор заказа пользователя или словарь с описанием ошибки
+    """
     сurrent_user_order = None
     if order_id == None:
         try:
@@ -122,6 +153,12 @@ def is_user_order_exists(request, order_id=None):
 
 
 def is_same_product_item_exists(data_for_order_item):
+    """
+    Функция проверки позиции заказа на существование в базе данных
+    :param data_for_order_item: словарь с идентификаторами заказа, продукта
+    и компании
+    :return: объект OrderItem
+    """
     try:
         same_product_item = OrderItem.objects.get(
             order=data_for_order_item['order'],
@@ -135,6 +172,11 @@ def is_same_product_item_exists(data_for_order_item):
 
 
 def calc_order_price (order_id):
+    """
+    Функция подсчета стоимости заказа
+    :param order_id: идентификатор заказа
+    :return: стоимость заказа либо словарь с описание ошибки
+    """
     # Отбираем и сохраняем в словаре данные по позициям ордера
     try:
         order_items = OrderItem.objects.filter(order=order_id)
@@ -156,10 +198,15 @@ def calc_order_price (order_id):
 
 class RegisterAccount(APIView):
     """
-    Класс для регистрации покупателей
+    Класс для регистрации пользователей поставщиков и покупателей
     """
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+        """
+        Функция для регистрации пользователей поставщиков и покупателей
+        :param request: объект запроса
+        :return: словарь с описанием ошибки либо успеха
+        """
         # Сначала проверяем что все необходимые данные есть в запросе
         if not {'first_name', 'last_name', 'middle_name', 'username', 'email',
             'password', 'position', 'phone', 'company_name',
@@ -274,13 +321,19 @@ class RegisterAccount(APIView):
                                  'Detailes': contact_serializer.errors})
 
 #-----------------------------------------------------------------------------
-
-
-class ProductCatalog(APIView):
+#-----------------------------------------------------------------------------
+# ViewSet for ProductCatalog and ProductCard
+class ProductViewSet(viewsets.ModelViewSet):
     """
-    Класс для просмотра каталога продуктов
+    Класс для реализации поведения по отборажению списка товаров
+    либо характеристик отдельного продукта
     """
-    def get(self, request, *args, **kwargs):
+    def list(self, request):
+        """
+        Функция для отображения каталога товаров
+        :param request: объект запроса
+        :return: каталог продуктов либо словарь с описанием ошибки
+        """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
                                  'Error': 'Log in required'},
@@ -291,18 +344,19 @@ class ProductCatalog(APIView):
 
         return Response(serializer.data)
 
-
-class ProductCard(APIView):
-    """
-    Класс для просмотра карточки продукта
-    """
-    def get(self, request, *args, **kwargs):
+    def retrieve(self, request, pk=None):
+        """
+        Функция для отображения карточки товара
+        :param request: объект запроса
+        :param pk: идентификатор продукта, если необходимо
+        :return: словарь с данными о продукте либо с описанием ошибки
+        """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
                                  'Error': 'Log in required'},
                                 status=401)
 
-        product_id = kwargs['product_id']
+        product_id = pk
         product = is_product_id_exists(product_id)
         if type(product) == dict:
             return Response({'Status': product['Status'],
@@ -336,12 +390,21 @@ class ProductCard(APIView):
 
         return Response(product_card)
 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 class AddToOrder(APIView):
     """
     Класс для добавления продукта в заказ
     """
-    def post(self, request, *args, **kwargs):
+    def post(self, request, **kwargs):
+        """
+        Функция для добавления продукта в заказ
+        :param request: объект запроса
+        :param kwargs: набор параметров запроса: <product_id>/<company_id>/
+        <quantity>/
+        :return:  словарь с описанием детализации операции: ошибки либо успеха
+        """
         # Проверка пользователя на авторизацию
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
@@ -465,7 +528,14 @@ class DelFromOrder(APIView):
     """
     Класс для удаления n-го количества продукта из заказа
     """
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request, **kwargs):
+        """
+        Функция для удаления n-го количества продукта из заказа
+        :param request: объект запроса
+        :param kwargs: список параметров запроса: <order_id>/<product_id>/
+        <company_id>/<quantity>
+        :return: словарь с описанием детализации операции: ошибки либо успеха
+        """
         # Проверка пользователя на авторизацию
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
@@ -563,7 +633,13 @@ class ViewOrder(APIView):
     """
     Класс для просмотра заказа
     """
-    def get(self, request, *args, **kwargs):
+    def get(self, request, **kwargs):
+        """
+        Функция для просмотра заказа
+        :param request: объект запроса
+        :param kwargs: парамерт запроса: <order_id>
+        :return:  словарь с описанием детализации операции: ошибки либо успеха
+        """
         # Проверка пользователя на авторизацию
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
@@ -617,7 +693,12 @@ class ViewOrderHistory(APIView):
     """
     Класс для просмотра истории заказов
     """
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
+        """
+        Функция для просмотра истории заказов
+        :param request: объект запроса
+        :return: словарь со всеми заказами пользователя
+        """
         # Проверка пользователя на авторизацию
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
@@ -638,7 +719,13 @@ class ChangeOrderStatus(APIView):
     """
     Класс для изменения статуса заказов
     """
-    def post(self, request, *args, **kwargs):
+    def post(self, request, **kwargs):
+        """
+        Функция для изменения статуса заказов
+        :param request: объект запроса
+        :param kwargs: параметры запроса: <order_id>/<order_status>
+        :return: словарь с описанием детализации операции: ошибки либо успеха
+        """
         # Проверка пользователя на авторизацию
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
