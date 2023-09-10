@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'backend_app',
     'import',
     'drf_yasg',
+    'social_django'
 ]
 
 MIDDLEWARE = [
@@ -140,11 +141,19 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '5/minute',
-        'user': '10/minute'
+        'anon': '30/minute',
+        'user': '60/minute'
     },
 }
 
 # Celery settings
 CELERY_BROKER_URL = "redis://localhost:6379"
 CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.vk.VKOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_VK_OAUTH2_KEY = '51746384'
+SOCIAL_AUTH_VK_OAUTH2_SECRET = 'qB3mIYUxZ1n3pmEl5Q76'

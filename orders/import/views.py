@@ -49,8 +49,8 @@ class PriceImport(APIView):
         # Если в базе нет такого поставщика - отказ в продолжении операции
         supplier_object = dict_from_yaml['supplier'][0]
         try:
-            supplier = Company.objects.get(id=supplier_object['id'],
-                                           company_name=supplier_object['name'])
+            supplier = Company.objects.get(
+                                        company_name=supplier_object['name'])
         except:
             str = f'Company with id={supplier_object["id"]} ' \
                   f'{supplier_object["name"]} has not been registered ' \

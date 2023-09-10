@@ -90,7 +90,7 @@ POST http://127.0.0.1:8000/api/user/api-token-auth/
 Content-Type: application/json
 
 {  
-  "username": "aalex",  2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
+  "username": "aalex",  
   "password": "1qaz2wsx"  
 }
 ### Получаем токен: 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
@@ -299,7 +299,7 @@ Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883
 ### 8. ИЗМЕНЕНИЕ СТАТУСОВ ЗАКАЗОВ
 
 ### 8.1 Менеджер магазина. Назначает статус new, id=1
-POST http://127.0.0.1:8000/api/product/change_order_status/1/new/
+POST http://127.0.0.1:8000/api/product/order/change_order_status/1/new/
 Content-Type: application/json
 Authorization: Token 2cfe8ee65c77d07c6fbb065a0bfbce1c6b5ce883 
 
