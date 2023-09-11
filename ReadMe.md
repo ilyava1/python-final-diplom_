@@ -4,12 +4,12 @@
 
 Что сделано:
 
-- -         установлен модуль celery и коннектор для подключения к redis
-- -         приложение добавлено в \_\_init.py\_\_ модуля orders
-- -         настройки приложения добавлены в settings
-- -         в папке приложения orders/orders/ добавлен файл celery.py c настройками
-- -         установлен redis
-- -         перенос приложения для тестирования на линукс-платформу (in progress..)
+- установлен модуль celery и коннектор для подключения к redis
+- приложение добавлено в \_\_init.py\_\_ модуля orders
+- настройки приложения добавлены в settings
+- в папке приложения orders/orders/ добавлен файл celery.py c настройками
+- установлен redis
+- перенос приложения для тестирования на линукс-платформу (in progress..)
 
 
 
@@ -17,13 +17,8 @@
 
 Что сделано:
 
-- -         Добавлен ProductViewSet для вывода списка продуктов (каталога)
-
-и карточки отдельного продукта.
-
-- -         В urls.py зарегистрирован роутер и подключен маршрут:
-
-path('product/', include(router.urls)). Данный маршрут отрабатывает
+- Добавлен ProductViewSet для вывода списка продуктов (каталога) и карточки отдельного продукта.
+- В urls.py зарегистрирован роутер и подключен маршрут: path('product/', include(router.urls)). Данный маршрут отрабатывает
 
 запросы раздела 4.ПРОСМОТР КАТАЛОГА ПРОДУКТОВ
 
@@ -33,10 +28,8 @@ path('product/', include(router.urls)). Данный маршрут отраба
 
 Что сделано:
 
-- -         В папку orders/backend\_app/ добавлен файл tests.py с тестами
-- -         Для запука теста из командной строки терминала находясь в директории
-
-python-final-project\orders набрать команду: python manage.py test backend\_app.tests
+- В папку orders/backend\_app/ добавлен файл tests.py с тестами
+- Для запуcка теста из командной строки терминала находясь в директории python-final-project\orders набрать команду: python manage.py test backend\_app.tests
 
 
 
@@ -44,16 +37,10 @@ python-final-project\orders набрать команду: python manage.py test
 
 Что сделано:
 
-- -         Установлен пакет drf-yasg - Yet another Swagger generator,
-
-приложение подключено в settings.py
-
-- -         В папку orders/orders/ добавлен файл yasg.py со схемой
-- -         В orders/orders/urls.py добавлены маршуты для swagger и redoc,
-
-определенные в yasg.py
-
-- -         Добавлены недостающие докстринги для классов и методов
+- Установлен пакет drf-yasg - Yet another Swagger generator, приложение подключено в settings.py
+- В папку orders/orders/ добавлен файл yasg.py со схемой
+- В orders/orders/urls.py добавлены маршуты для swagger и redoc, определенные в yasg.py
+- Добавлены недостающие докстринги для классов и методов
 
 В результате по ссылке http://127.0.0.1:8000/swagger/ запускается интерфейс тестирования/документирования.
 
@@ -65,8 +52,8 @@ python-final-project\orders набрать команду: python manage.py test
 
 В settings.py в раздел REST\_FRAMEWORK добавлены настройки троттлинга:
 
-- -         'DEFAULT\_THROTTLE\_CLASSES'
-- -         'DEFAULT\_THROTTLE\_RATES':
+- 'DEFAULT\_THROTTLE\_CLASSES'
+- 'DEFAULT\_THROTTLE\_RATES':
 
 'anon': '30/minute',
 
@@ -82,11 +69,11 @@ HTTP/1.1 429 Too Many Requests.
 
 Что сделано:
 
-- -         Установлено social-auth-app-django
-- -         'social\_django' зарегистрировано в settings и в urls
-- -         Там же в settings добавлен раздел AUTHENTICATION\_BACKENDS и в него сервер аутентификаии ВК
-- -         приложение зарегистрировано в ВК
-- -         Application Id and Application Secret прописаны в settings
+- Установлено social-auth-app-django
+- 'social\_django' зарегистрировано в settings и в urls
+- Там же в settings добавлен раздел AUTHENTICATION\_BACKENDS и в него сервер аутентификаии ВК
+- Приложение зарегистрировано в ВК
+- Application Id and Application Secret прописаны в settings
 
 
 
